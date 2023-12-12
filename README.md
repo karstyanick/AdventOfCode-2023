@@ -15,7 +15,7 @@ Advent of Code is an annual event featuring daily programming puzzles throughout
 You can run the main.rs file in the root directory and via command line input select the day you want to run.
 
 ### Using Cargo
-If you prefer using Cargo, from the root directory you can run:
+If you prefer using Cargo. From the root directory you can run:
 
 ```bash
 cargo run
@@ -24,10 +24,10 @@ cargo run
 This command will compile and execute the Rust code for the specific day.
 
 ### Using Rust Compiler (rustc)
-Alternatively, you can compile and execute the Rust code manually using the Rust compiler.
+Alternatively, you can compile and execute the Rust code manually using the Rust compiler. From the root directory run:
 Compile the Rust code:
 ```bash
-rustc main.rs
+rustc src/main.rs
 ```
 
 Then, execute the compiled binary:
