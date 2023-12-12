@@ -21,7 +21,7 @@ If you prefer using Cargo. From the root directory you can run:
 cargo run
 ```
 
-This command will compile and execute the Rust code for the specific day.
+This command will compile and execute the Rust code for you.
 
 ### Using Rust Compiler (rustc)
 Alternatively, you can compile and execute the Rust code manually using the Rust compiler. From the root directory run:
