@@ -1,14 +1,63 @@
 use std::fs;
+#[derive(Clone)]
+struct PartNumber {
+    number: u32,
+    index: usize,
+    length: usize,
+    line: usize
+}
 
 pub fn day3() {
     let file_contents = fs::read_to_string("./src/day3/input.txt").expect("Should have been able to read the file");
     part1(file_contents.clone());
+    part2(file_contents.clone());
 }
 
 fn part1(file_contents: String) {
-    let lines = file_contents.lines().enumerate().map(|(line_index, line)| line).collect::<Vec<&str>>();
+    let lines = file_contents.lines().map(|line| line).collect::<Vec<&str>>();
+    let part_numbers = get_part_numbers(lines.clone());
+    println!("Part1: {}", part_numbers.iter().map(|part_number| part_number.number).sum::<u32>())
+}
 
-    let valid_items = lines.iter().enumerate().map(|(line_index, line)| {
+fn part2(file_contents: String) {
+    let lines = file_contents.lines().map(|line| line).collect::<Vec<&str>>();
+    let part_numbers = get_part_numbers(lines.clone());
+    
+    let gear_ratios = lines.iter().enumerate().map(|(line_index, line)| {
+        
+        let line_gear_ratios = line.char_indices().map(|(index, character)| {
+            if character == '*' {
+                let above_adjacent = filter_adjacent_part_numbers(part_numbers.clone(), line_index-1, index);
+                let below_adjacent = filter_adjacent_part_numbers(part_numbers.clone(), line_index+1, index);
+                let same_line_adjacent = filter_adjacent_part_numbers(part_numbers.clone(), line_index, index);
+
+                let all_adjacent = [above_adjacent, below_adjacent, same_line_adjacent].concat();
+
+                if all_adjacent.len() == 2 {
+                    return Some(all_adjacent[0] * all_adjacent[1])
+                }
+            }
+            return None
+        }).flatten().collect::<Vec<u32>>();
+
+        return line_gear_ratios
+
+    }).flatten().collect::<Vec<u32>>();
+
+    println!("Part2: {}", gear_ratios.iter().sum::<u32>());
+}
+
+fn filter_adjacent_part_numbers(part_numbers: Vec<PartNumber>, line_index: usize, index: usize) -> Vec<u32>{
+    return part_numbers.iter().filter(|part_number| {
+        part_number.line == line_index && 
+        ((part_number.index..part_number.index + part_number.length).contains(&index) || 
+        (part_number.index..part_number.index + part_number.length).contains(&(index + 1)) || 
+        (part_number.index..part_number.index + part_number.length).contains(&(index - 1)))
+    }).map(|part_numer| part_numer.number).collect::<Vec<u32>>();
+}
+
+fn get_part_numbers(lines: Vec<&str>) -> Vec<PartNumber>{
+    return lines.iter().enumerate().map(|(line_index, line)| {
 
         let mut last_was_number = false;
         let mut current_number = String::from("");
@@ -18,27 +67,29 @@ fn part1(file_contents: String) {
         let numbers_with_index = line.char_indices().map(|(index, character)| {
 
             let is_end_of_line = index == line.len() - 1;
+            let mut used_index = index;
 
-            let mut usedIndex = index;
-
-            if(is_end_of_line && character.is_numeric()){
-                usedIndex += 1;
+            if is_end_of_line && character.is_numeric() {
+                used_index += 1;
                 current_number.push(character);
-            }
-            
-            if (index == 136){
-                println!("HEYO")
             }
 
             if character == '.' || is_end_of_line{
                 if last_was_number {
-                    if validate_next_number || filter_other_line_adjacent(lines.clone(), line_index, usedIndex - current_number.len(), current_number.len()){
-
-                        let return_value = Some(current_number.parse().unwrap());
+                    if validate_next_number || filter_other_line_adjacent(lines.clone(), line_index, used_index - current_number.len(), current_number.len()){
+                        let return_value = current_number.parse::<u32>().unwrap();
+                        let length = current_number.len();
+                        let index = used_index - current_number.len();
                         last_was_number = false;
                         current_number.clear();
                         validate_next_number = false;
-                        return return_value;
+
+                        return Some(PartNumber {
+                            number: return_value,
+                            index,
+                            length,
+                            line: line_index
+                        });
                     }else{
                         last_was_number = false;
                         current_number.clear();
@@ -54,31 +105,32 @@ fn part1(file_contents: String) {
                     current_number.push(character);
                     return None;
                 }else{                    
-                    if last_was_number || filter_other_line_adjacent(lines.clone(), line_index, usedIndex - current_number.len(), current_number.len()){
-                        let return_value = Some(current_number.parse().unwrap());
-
+                    if last_was_number || filter_other_line_adjacent(lines.clone(), line_index, used_index - current_number.len(), current_number.len()){
+                        let return_value = current_number.parse::<u32>().unwrap();
+                        let length = current_number.len();
+                        let index = used_index - current_number.len();
                         last_was_number = false;
                         current_number.clear();
                         validate_next_number = true;
 
-                        return return_value
+                        return Some(PartNumber {
+                            number: return_value,
+                            index,
+                            length,
+                            line: line_index
+                        
+                        });
                     }else{
                         validate_next_number = true;
                         return None
                     }
                 }
             }
-        }).flatten().collect::<Vec<u32>>();
+        }).flatten().collect::<Vec<PartNumber>>();
 
         return numbers_with_index
-    }).flatten().collect::<Vec<u32>>();
-
-    println!("{:?}", valid_items);
-    println!("{:?}", valid_items.iter().sum::<u32>())
+    }).flatten().collect::<Vec<PartNumber>>();
 }
-
-
-
 
 fn filter_other_line_adjacent(lines: Vec<&str>, current_line_index: usize, index: usize, number_length: usize) -> bool{
         
@@ -87,7 +139,7 @@ fn filter_other_line_adjacent(lines: Vec<&str>, current_line_index: usize, index
 
     let mut contains_symbol = false;
 
-    if(current_line_index > 0){
+    if current_line_index > 0 {
         lines[current_line_index-1].get(starting_index..ending_index).unwrap().chars().for_each(|character| {
             if character != '.' && !character.is_numeric() {
                 contains_symbol = true;
